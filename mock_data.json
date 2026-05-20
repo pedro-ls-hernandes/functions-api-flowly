@@ -1,0 +1,98 @@
+{
+  "users": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7890123",
+      "nome": "Admin Mock",
+      "email": "admin@mock.local",
+      "tipo": "admin"
+    },
+    {
+      "_id": "64b7f1a2b3c4d5e6f7890124",
+      "nome": "João Mock",
+      "email": "joao@mock.local",
+      "tipo": "user"
+    },
+    {
+      "_id": "64b7f1a2b3c4d5e6f7890125",
+      "nome": "Maria Mock",
+      "email": "maria@mock.local",
+      "tipo": "user"
+    }
+  ],
+  "equipes": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7891001",
+      "nome": "Equipe Alpha",
+      "membros": [
+        "64b7f1a2b3c4d5e6f7890124",
+        "64b7f1a2b3c4d5e6f7890125"
+      ]
+    },
+    {
+      "_id": "64b7f1a2b3c4d5e6f7891002",
+      "nome": "Equipe Beta",
+      "membros": [
+        "64b7f1a2b3c4d5e6f7890124"
+      ]
+    },
+    {
+      "_id": "6e8421d1f0a4464090b69ac7",
+      "nome": "equipe beta 2",
+      "membros": []
+    }
+  ],
+  "tarefas": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7892002",
+      "descricao": "Revisar backlog de bugs",
+      "detalhes": "Priorizar bugs críticos e atualizar status.",
+      "status": "em_andamento",
+      "user": null,
+      "equipe": "64b7f1a2b3c4d5e6f7891001",
+      "subtarefas": [
+        {
+          "_id": "64b7f1a2b3c4d5e6f7893001",
+          "descricao": "Separar por urgência",
+          "concluida": false
+        }
+      ]
+    },
+    {
+      "_id": "64b7f1a2b3c4d5e6f7892003",
+      "descricao": "Atualizar documentação do projeto",
+      "detalhes": "Documentar fluxo de deploy e variáveis de ambiente.",
+      "status": "pendente",
+      "user": null,
+      "equipe": "64b7f1a2b3c4d5e6f7891002",
+      "subtarefas": []
+    }
+  ],
+  "comentarios": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7894001",
+      "tarefa": "64b7f1a2b3c4d5e6f7892001",
+      "user": "64b7f1a2b3c4d5e6f7890125",
+      "texto": "Posso ajudar com a parte das métricas.",
+      "createdAt": "2026-05-18T10:00:00Z"
+    }
+  ],
+  "logs": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7895001",
+      "tarefa": "64b7f1a2b3c4d5e6f7892001",
+      "user": "64b7f1a2b3c4d5e6f7890123",
+      "acao": "criacao",
+      "descricao": "Tarefa criada (mock)",
+      "createdAt": "2026-05-18T09:00:00Z"
+    }
+  ],
+  "messages": [
+    {
+      "_id": "64b7f1a2b3c4d5e6f7896001",
+      "equipe": "64b7f1a2b3c4d5e6f7891001",
+      "user": "64b7f1a2b3c4d5e6f7890124",
+      "texto": "Bom dia! Vamos fechar o relatório hoje.",
+      "createdAt": "2026-05-18T08:30:00Z"
+    }
+  ]
+}

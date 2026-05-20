@@ -1,0 +1,223 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import List, Literal
+
+Role = Literal["admin", "user", "any"]
+
+
+@dataclass(frozen=True)
+class Command:
+    key: str
+    title: str
+    method: str
+    route: str
+    controller_method: str
+    role_required: Role
+    phrases: List[str]
+    required_params: List[str]
+
+
+def get_commands() -> List[Command]:
+    return [
+        Command(
+            key="exit",
+            title="encerrar assistente",
+            method="",
+            route="",
+            controller_method="",
+            role_required="any",
+            phrases=["sair", "encerrar", "parar assistente", "fechar assistente"],
+            required_params=[],
+        ),
+        Command(
+            key="my_tasks",
+            title="listar minhas tarefas",
+            method="GET",
+            route="GET /api/tarefas/minhas",
+            controller_method="tarefaController.minhasTarefas",
+            role_required="user",
+            phrases=["minhas tarefas", "listar minhas tarefas", "ver minhas tarefas"],
+            required_params=[],
+        ),
+        Command(
+            key="backlog",
+            title="listar backlog",
+            method="GET",
+            route="GET /api/tarefas/backlog",
+            controller_method="tarefaController.listarBacklog",
+            role_required="user",
+            phrases=["backlog", "listar backlog", "tarefas sem responsável", "tarefas sem responsavel"],
+            required_params=[],
+        ),
+        Command(
+            key="assign_to_me",
+            title="atribuir tarefa para mim",
+            method="PUT",
+            route="PUT /api/tarefas/:id/atribuir-para-mim",
+            controller_method="tarefaController.atribuirParaMim",
+            role_required="user",
+            phrases=["atribuir para mim", "pegar tarefa", "assumir tarefa", "atribuir tarefa para mim"],
+            required_params=["task_id"],
+        ),
+        Command(
+            key="update_status",
+            title="atualizar status da tarefa",
+            method="PUT",
+            route="PUT /api/tarefas/:id/status",
+            controller_method="tarefaController.atualizarStatusUser",
+            role_required="user",
+            phrases=["mudar status", "atualizar status", "marcar como", "status da tarefa"],
+            required_params=["task_id", "status"],
+        ),
+        Command(
+            key="timer",
+            title="controlar cronômetro",
+            method="PUT",
+            route="PUT /api/tarefas/:id/cronometro",
+            controller_method="tarefaController.controlarCronometro",
+            role_required="user",
+            phrases=["cronometro", "cronômetro", "iniciar cronometro", "pausar cronometro"],
+            required_params=["task_id", "acao"],
+        ),
+        Command(
+            key="me",
+            title="mostrar meu perfil",
+            method="GET",
+            route="GET /api/users/me",
+            controller_method="userController.me",
+            role_required="any",
+            phrases=["meu perfil", "meus dados", "quem sou eu"],
+            required_params=[],
+        ),
+        Command(
+            key="list_users",
+            title="listar usuários",
+            method="GET",
+            route="GET /api/users",
+            controller_method="userController.listarUsers",
+            role_required="any",
+            phrases=["listar usuarios", "listar usuários", "todos os usuarios", "todos os usuários"],
+            required_params=[],
+        ),
+        Command(
+            key="search_users",
+            title="buscar usuário",
+            method="GET",
+            route="GET /api/users/search?q=...",
+            controller_method="userController.searchUsers",
+            role_required="any",
+            phrases=["buscar usuario", "buscar usuário", "procurar usuario", "procurar usuário"],
+            required_params=["q"],
+        ),
+        Command(
+            key="my_teams",
+            title="listar minhas equipes",
+            method="GET",
+            route="GET /api/equipes/minhas",
+            controller_method="equipeController.listarMinhasEquipes",
+            role_required="any",
+            phrases=["minhas equipes", "minhas equipes", "listar minhas equipes", "ver minhas equipes"],
+            required_params=[],
+        ),
+        Command(
+            key="team_members",
+            title="listar membros da equipe",
+            method="GET",
+            route="GET /api/equipes/:id/membros",
+            controller_method="equipeController.getMembrosDaEquipe",
+            role_required="any",
+            phrases=["membros da equipe", "listar membros", "quem está na equipe", "quem esta na equipe"],
+            required_params=["team_id"],
+        ),
+        Command(
+            key="team_messages",
+            title="mostrar mensagens da equipe",
+            method="GET",
+            route="GET /api/equipes/:id/messages",
+            controller_method="equipeController.getMessages",
+            role_required="any",
+            phrases=["mensagens da equipe", "historico da equipe", "histórico da equipe", "chat da equipe"],
+            required_params=["team_id"],
+        ),
+        Command(
+            key="task_details",
+            title="mostrar detalhes da tarefa",
+            method="GET",
+            route="GET /api/tarefas/:id/detalhes",
+            controller_method="tarefaController.detalhesTarefa",
+            role_required="any",
+            phrases=["detalhes da tarefa", "mostrar detalhes da tarefa", "abrir tarefa", "ver tarefa"],
+            required_params=["task_id"],
+        ),
+        Command(
+            key="add_comment",
+            title="adicionar comentário",
+            method="POST",
+            route="POST /api/tarefas/:id/comentarios",
+            controller_method="tarefaController.adicionarComentario",
+            role_required="any",
+            phrases=["adicionar comentario", "adicionar comentário", "comentar", "novo comentario", "novo comentário"],
+            required_params=["task_id", "texto"],
+        ),
+        Command(
+            key="add_subtask",
+            title="adicionar subtarefa",
+            method="POST",
+            route="POST /api/tarefas/:id/subtarefas",
+            controller_method="tarefaController.adicionarSubtarefa",
+            role_required="any",
+            phrases=["adicionar subtarefa", "nova subtarefa", "criar subtarefa"],
+            required_params=["task_id", "descricao"],
+        ),
+        Command(
+            key="list_teams",
+            title="listar todas as equipes",
+            method="GET",
+            route="GET /api/equipes",
+            controller_method="equipeController.listarEquipes",
+            role_required="admin",
+            phrases=["listar equipes", "todas as equipes", "listar todas as equipes"],
+            required_params=[],
+        ),
+        Command(
+            key="create_team",
+            title="criar equipe",
+            method="POST",
+            route="POST /api/equipes",
+            controller_method="equipeController.criarEquipe",
+            role_required="admin",
+            phrases=["criar equipe", "nova equipe", "adicionar equipe"],
+            required_params=["nome"],
+        ),
+        Command(
+            key="create_task",
+            title="criar tarefa",
+            method="POST",
+            route="POST /api/tarefas",
+            controller_method="tarefaController.criarTarefa",
+            role_required="admin",
+            phrases=["criar tarefa", "nova tarefa", "adicionar tarefa"],
+            required_params=["descricao", "equipe"],
+        ),
+        Command(
+            key="list_tasks",
+            title="listar tarefas",
+            method="GET",
+            route="GET /api/tarefas?user=&equipe=",
+            controller_method="tarefaController.listarTarefas",
+            role_required="admin",
+            phrases=["listar tarefas", "todas as tarefas"],
+            required_params=[],
+        ),
+        Command(
+            key="delete_task",
+            title="excluir tarefa",
+            method="DELETE",
+            route="DELETE /api/tarefas/:id",
+            controller_method="tarefaController.excluirTarefa",
+            role_required="admin",
+            phrases=["excluir tarefa", "apagar tarefa", "deletar tarefa"],
+            required_params=["task_id"],
+        ),
+    ]

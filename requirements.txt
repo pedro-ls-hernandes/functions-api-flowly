@@ -1,0 +1,18 @@
+pyttsx3==2.90
+python-dotenv==1.0.1
+
+# Speech-to-text (Google via SpeechRecognition) - opcional
+SpeechRecognition==3.10.0
+
+# Python 3.13+: SpeechRecognition ainda importa aifc/audioop; este backport restaura os módulos
+standard-aifc==3.13.0; python_version >= '3.13'
+
+# -----------------
+# Voz (opcional)
+# -----------------
+# Captura de microfone (opcional):
+# - Via PyAudio (SpeechRecognition.Microphone)
+#   pyaudio==0.2.13
+# - Ou via SoundDevice (fallback implementado nesta assistente)
+#   sounddevice==0.4.7
+#   numpy==2.2.6
