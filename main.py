@@ -1,10 +1,10 @@
-from assistant import FlowlyAssistant
+"""Google Cloud Functions / Functions Framework entrypoint.
 
+O runtime do Cloud Functions (Python) carrega o módulo `main` por padrão.
+Aqui nós expomos a função HTTP `trigger_http`.
 
-def main() -> None:
-    assistant = FlowlyAssistant()
-    assistant.run()
+Para rodar local via Functions Framework:
+    functions-framework --target trigger_http --port 8080
+"""
 
-
-if __name__ == "__main__":
-    main()
+from function import flowly_mock, trigger_http  # noqa: F401

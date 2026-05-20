@@ -16,3 +16,6 @@ standard-aifc==3.13.0; python_version >= '3.13'
 # - Ou via SoundDevice (fallback implementado nesta assistente)
 #   sounddevice==0.4.7
 #   numpy==2.2.6
+
+# HTTP runtime (Google Cloud Functions/Run via Functions Framework)
+functions-framework==3.*
