@@ -54,7 +54,31 @@ def _is_object_id(value: str) -> bool:
 
 
 def _json_response(payload: Dict[str, Any], status: int = 200) -> tuple[str, int, Dict[str, str]]:
-    return (json.dumps(payload, ensure_ascii=False), status, {"Content-Type": "application/json"})
+    headers: Dict[str, str] = {"Content-Type": "application/json"}
+    cors_origin = str(os.getenv("FLOWLY_CORS_ORIGIN", "*") or "*").strip()
+    if cors_origin:
+        headers["Access-Control-Allow-Origin"] = cors_origin
+        headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        headers["Access-Control-Max-Age"] = "3600"
+    return (json.dumps(payload, ensure_ascii=False), status, headers)
+
+
+def _reply_text(command_key: str, result: Any) -> str:
+    if command_key in {"my_tasks", "backlog", "list_teams", "my_teams", "list_users"}:
+        n = len(result) if isinstance(result, list) else 0
+        return f"Ok. Encontrei {n} itens."
+
+    if command_key == "task_details":
+        tarefa = (result or {}).get("tarefa") if isinstance(result, dict) else None
+        desc = (tarefa or {}).get("descricao") if isinstance(tarefa, dict) else None
+        return f"Detalhes carregados. Tarefa: {desc}" if desc else "Detalhes carregados."
+
+    if command_key == "me":
+        nome = (result or {}).get("nome") if isinstance(result, dict) else None
+        return f"Aqui está o seu perfil, {nome}." if nome else "Aqui está o seu perfil."
+
+    return "Ação concluída com sucesso."
 
 
 def _has_permission(user_type: Optional[str], required: str) -> bool:
@@ -252,8 +276,19 @@ def flowly_mock(request):
     Returns JSON with match + result.
     """
 
+    if request.method == "OPTIONS":
+        # CORS preflight
+        return _json_response({"ok": True}, 204)
+
     if request.method == "GET":
-        return _json_response({"ok": True, "service": "flowly_assistente_mock", "message": "POST JSON em /"})
+        return _json_response(
+            {
+                "ok": True,
+                "service": "flowly_assistente_mock",
+                "message": "POST JSON em /",
+                "example": {"utterance": "meu perfil"},
+            }
+        )
 
     try:
         body = request.get_json(silent=True) or {}
@@ -262,7 +297,7 @@ def flowly_mock(request):
 
     utterance = str(body.get("utterance") or body.get("text") or "").strip()
     if not utterance:
-        return _json_response({"ok": False, "error": "missing_utterance"}, 400)
+        return _json_response({"ok": False, "error": "missing_utterance", "reply_text": "Diga um comando."}, 400)
 
     user_type = str(body.get("user_type") or os.getenv("FLOWLY_USER_TYPE", "admin") or "admin").strip().lower()
     me_user_id = str(body.get("me_user_id") or os.getenv("FLOWLY_ME_USER_ID", "") or "").strip()
@@ -282,13 +317,24 @@ def flowly_mock(request):
     parser = CommandParser(threshold=int(os.getenv("FLOWLY_MATCH_THRESHOLD", "78")))
     match = parser.match(utterance)
     if match is None:
-        return _json_response({"ok": False, "error": "unrecognized_command"}, 400)
+        return _json_response(
+            {
+                "ok": False,
+                "error": "unrecognized_command",
+                "reply_text": "Não consegui identificar o comando. Pode repetir?",
+            },
+            400,
+        )
 
     if match.command.key == "exit":
-        return _json_response({"ok": True, "command": {"key": "exit"}, "message": "noop"})
+        return _json_response(
+            {"ok": True, "command": {"key": "exit"}, "message": "noop", "reply_text": "Encerrando."}
+        )
 
     if not _has_permission(user_type, match.command.role_required):
-        return _json_response({"ok": False, "error": "forbidden"}, 403)
+        return _json_response(
+            {"ok": False, "error": "forbidden", "reply_text": "Você não tem permissão para esse comando."}, 403
+        )
 
     params: Dict[str, str] = {}
     raw_params = body.get("params")
@@ -300,7 +346,16 @@ def flowly_mock(request):
 
     missing = [p for p in match.command.required_params if not params.get(p)]
     if missing:
-        return _json_response({"ok": False, "error": "missing_params", "missing": missing}, 400)
+        missing_txt = ", ".join(missing)
+        return _json_response(
+            {
+                "ok": False,
+                "error": "missing_params",
+                "missing": missing,
+                "reply_text": f"Preciso de mais informações: {missing_txt}.",
+            },
+            400,
+        )
 
     # Resolve team/task refs for non-objectId strings.
     try:
@@ -319,10 +374,19 @@ def flowly_mock(request):
             params["task_id"] = tid
             params.setdefault("_task_label", label)
     except APIError as e:
-        return _json_response({"ok": False, "error": "resolve_failed", "message": str(e)}, 400)
+        return _json_response(
+            {
+                "ok": False,
+                "error": "resolve_failed",
+                "message": str(e),
+                "reply_text": str(e),
+            },
+            400,
+        )
 
     try:
         result = _execute(match, api, params)
+        reply_text = _reply_text(match.command.key, result)
         return _json_response(
             {
                 "ok": True,
@@ -338,12 +402,21 @@ def flowly_mock(request):
                 "user_type": user_type,
                 "params": params,
                 "result": _coerce_jsonable(result),
+                "reply_text": reply_text,
             }
         )
     except APIError as e:
-        return _json_response({"ok": False, "error": "api_error", "message": str(e)}, 400)
+        return _json_response({"ok": False, "error": "api_error", "message": str(e), "reply_text": str(e)}, 400)
     except Exception as e:
-        return _json_response({"ok": False, "error": "internal_error", "message": str(e)}, 500)
+        return _json_response(
+            {
+                "ok": False,
+                "error": "internal_error",
+                "message": str(e),
+                "reply_text": "Ocorreu um erro inesperado.",
+            },
+            500,
+        )
 
 
 def trigger_http(request):
