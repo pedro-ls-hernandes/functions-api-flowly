@@ -1,14 +1,36 @@
 # Flowly Voice API Mock
 
-API HTTP em Python para processar comandos de voz e executar operações no Flowly. 
-**Roda completamente mockada, sem backend ou banco de dados**, usando dados locais em `mock_data.json`.
+API HTTP em Python para processar comandos de voz e executar operações no Flowly. A API funciona através do **Google Cloud Functions**, 
+rodando completamente mockada, sem backend ou banco de dados, usando dados locais em `mock_data.json` a fim de testes da atividade.
+O funcinamento coeso da API será entregue junto ao projeto final. Você pode encontrar nosso [aqui](https://github.com/FATEC-Mobile-Group/flowly-2.0)
 
-## Overview
+## Arquitetura
 
-- **Pronta para Google Cloud Functions** via HTTP Trigger
-- **MockAPI com dados locais** para testes rápidos
-- **Compatível com Cloud Run** via Functions Framework
-- **Suporte completo a comandos de voz** traduzidos em ações
+```
+Requisição HTTP
+    ↓
+function.py (flowly_mock)
+    ↓
+CommandParser (command_parser.py) → identifica o comando
+    ↓
+Match (comando + parâmetros extraídos)
+    ↓
+_execute() → chama api_client
+    ↓
+FlowlyAPIClient (api_client.py) → acessa mock_data
+    ↓
+Resposta JSON
+```
+
+## Justificativa
+
+Adotar uma arquitetura serverless orientada a eventos através do Google Cloud Functions para esta funcionalidade, em detrimento de um endpoint comum na API principal, traz vantagens estratégicas cruciais:
+
+**Isolamento de Carga e Escalabilidade Independente:** O processo de parsing de texto, cálculos de similaridade de strings (fuzzy matching) e resolução de entidades é computacionalmente mais volátil e pesado do que as operações tradicionais de CRUD da API. Isolando-o em uma Cloud Function, garantimos que picos de uso do assistente de voz escalem de forma totalmente independente, sem consumir a CPU/Memória do backend principal e sem comprometer a estabilidade do restante do sistema.
+
+**Eficiência de Custos (Pay-per-use):** Comandos de voz tendem a ser utilizados de forma esporádica ao longo do dia. Em uma infraestrutura tradicional, haveria um servidor rodando e consumindo recursos continuamente para manter o endpoint ativo. Com o modelo serverless, o custo é cobrado estritamente pelo tempo de execução da requisição (ao milissegundo), reduzindo o desperdício a zero quando a funcionalidade não estiver sendo demandada.
+
+**Desacoplamento e Manutenibilidade:** O assistente de voz funciona essencialmente como uma camada de tradução autônoma. Ao transformá-lo em um microsserviço independente, a equipe pode atualizar as regras gramaticais, os dicionários de sinônimos, os limiares de threshold e os pacotes de processamento de texto em commands.py sem a necessidade de buildar, testar ou realizar o deploy de toda a API principal do Flowly.
 
 ## Quick Start (Local)
 
@@ -22,19 +44,11 @@ python cli.py
 ```
 
 ### HTTP Server (Functions Framework)
-Ideal para testar como estará em Google Cloud Functions.
 
 ```bash
 cd flowly_assistente_mock
 pip install -r requirements.txt
 functions-framework --target trigger_http --port 8080
-```
-
-Teste em outro terminal:
-```bash
-curl -X POST http://localhost:8080/ \
-  -H "Content-Type: application/json" \
-  -d '{"utterance":"meu perfil"}'
 ```
 
 ### Docker
@@ -53,11 +67,30 @@ docker run --rm -p 8080:8080 flowly-voice-api:latest
 4. **Execução**: Aplica a ação no mock data
 5. **Resposta**: JSON com resultado + texto para TTS
 
+## Como testar
+
+O teste da API torna-se mais fácil utilizando uma IDE como Postman ou Insomnia, mas pode funcionar através do navegador ou então testes pelo terminal.
+
+### Postman
+1. Defina o método da requisição para `POST`
+2. Defina o URL com o link do funcionamento da sua API *(Nuvem ou localhost)*
+3. Confira se `Content-Type` está definido como `application/json`
+4. No `Body`, selecione `RAW/json` e defina o Request Body *(Encontrado em exemplo logo abaixo)*
+
+### Terminal/Navegador
+1. Modifique o `curl` do modo que preferir, seguindo as referências abaixo.
+```
+curl -X POST "https://SUA-FUNCAO-URL/" `
+  -H "Content-Type: application/json" `
+  -d '{"utterance":"meu perfil"}'
+```
+2. Faça a requisição.
+
 ## API Reference
 
 ### Endpoint
 ```
-POST / 
+POST / https://functions-api-flowly-646126851973.southamerica-east1.run.app/
 Content-Type: application/json
 ```
 
@@ -162,7 +195,7 @@ FLOWLY_CORS_ORIGIN=*
 
 ## Mock Data
 
-Edite `mock_data.json` para criar seus próprios usuários/equipes/tarefas:
+Edite `mock_data.json` para criar seus próprios usuários/equipes/tarefas se usado localmente:
 
 ```json
 {
@@ -178,29 +211,6 @@ Edite `mock_data.json` para criar seus próprios usuários/equipes/tarefas:
 }
 ```
 
-## Deployment
-
-### Google Cloud Functions (Gen2)
-
-1. Deploy via gcloud CLI:
-```bash
-gcloud functions deploy flowly-voice-api \
-  --runtime python312 \
-  --trigger-http \
-  --allow-unauthenticated \
-  --entry-point trigger_http \
-  --region us-central1 \
-  --source flowly_assistente_mock
-```
-
-2. Ou via Cloud Run:
-```bash
-gcloud run deploy flowly-voice-api \
-  --source flowly_assistente_mock \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-```
 
 ## Estrutura do Projeto
 
